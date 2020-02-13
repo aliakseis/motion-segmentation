@@ -25,7 +25,10 @@ file(GLOB TEST_SRC_FILES "*.cpp")
 add_executable(test ${TEST_SRC_FILES})
 include_directories(/usr/local/Cellar/eigen/3.2.9/include/eigen3)
 include_directories(/usr/local/include)
-target_link_libraries(test ${OpenCV_LIBS} png)
+target_link_libraries(test ${OpenCV_LIBS} )
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(test PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 #usage
 #CC=clang-omp CXX=clang-omp++ cmake .

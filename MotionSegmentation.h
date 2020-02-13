@@ -37,7 +37,7 @@ public:
 
     std::vector<uchar> inliers(matchPoints1.size(), 0);
     cv::Mat fundamental = cv::findFundamentalMat(
-        matchPoints1, matchPoints2, inliers, CV_FM_RANSAC, 3, 0.99);
+        matchPoints1, matchPoints2, inliers, cv::FM_RANSAC, 3, 0.99);
 
     // int index = 0;
     // int removePixels = 0;
@@ -72,7 +72,7 @@ public:
     }
 
     //   std::cout << "removed points:" << removePixels << std::endl;
-    F = cv::findFundamentalMat(points1, points2, CV_FM_8POINT, 3, 0.99);
+    F = cv::findFundamentalMat(points1, points2, cv::FM_8POINT, 3, 0.99);
     cv::Mat R;
     cv::Mat K(3, 3, CV_64F);
     cv::Mat W(3, 3, CV_64F);

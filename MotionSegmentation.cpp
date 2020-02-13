@@ -599,11 +599,12 @@ void MotionSegmentation::forwardBackwardConsistencyCheck(float threshold) {
   std::fstream uFile, vFile;
   uFile.open("u_epic_sintel_back.txt", std::ios::in);
   vFile.open("v_epic_sintel_back.txt", std::ios::in);
-  float u[width_][height_], v[width_][height_];
+  //float u[width_][height_], v[width_][height_];
+  std::vector<float> u(width_ * height_), v(width_ * height_);
   for (int y = 0; y < height_; ++y) {
     for (int x = 0; x < width_; ++x) {
-      uFile >> u[x][y];
-      vFile >> v[x][y];
+      uFile >> u[x + y * width_];
+      vFile >> v[x + y * width_];
     }
   }
   uFile.close();
@@ -613,14 +614,14 @@ void MotionSegmentation::forwardBackwardConsistencyCheck(float threshold) {
   backward.setOnes();
   for (int y = 0; y < height_; ++y) {
     for (int x = 0; x < width_; ++x) {
-      if (std::isnan(u[x][y]) || std::isnan(v[x][y])) {
+      if (std::isnan(u[x + y * width_]) || std::isnan(v[x + y * width_])) {
         std::cout << "find a nan at (" << x << "," << y << ")" << std::endl;
-        std::cout << u[x][y] << std::endl;
-        std::cout << v[x][y] << std::endl;
+        std::cout << u[x + y * width_] << std::endl;
+        std::cout << v[x + y * width_] << std::endl;
         cv::waitKey(0);
       }
-      backward(x + y * width_, 0) = std::floor(x + u[x][y]);
-      backward(x + y * width_, 1) = std::floor(y + v[x][y]);
+      backward(x + y * width_, 0) = std::floor(x + u[x + y * width_]);
+      backward(x + y * width_, 1) = std::floor(y + v[x + y * width_]);
     }
   }
   // cv::Mat baseImage = cv::imread("frame_0020.png", 0);
@@ -820,6 +821,10 @@ bool MotionSegmentation::checkEnergyDescending(
   if (std::abs(energy - energyLastTime) < 0.01) {
     return false;
   } else {
+
+    if (energy > energyLastTime)
+        return false;
+
     energyLastTime = energy;
     return true;
   }
@@ -858,7 +863,7 @@ void MotionSegmentation::generateMotionProposals(
   while (points1.size() > initThreshold && oldInlierNumber != points1.size()) {
     oldInlierNumber = points1.size();
     cv::Mat fundamental =
-        cv::findFundamentalMat(points1, points2, CV_FM_LMEDS, 3, 0.99, inliers);
+        cv::findFundamentalMat(points1, points2, cv::FM_LMEDS, 3, 0.99, inliers);
 
     // cv::Mat R;
     // cv::Mat K(3, 3, CV_64F);
@@ -991,7 +996,7 @@ void MotionSegmentation::modelDiscovery(
       }
       std::vector<uchar> mask;
       cv::Mat fundamental =
-          cv::findFundamentalMat(point1, point2, CV_FM_LMEDS, 3, 0.99, mask);
+          cv::findFundamentalMat(point1, point2, cv::FM_LMEDS, 3, 0.99, mask);
       std::cout << "using " << mask.size()
                 << " points to generate motion proposal..." << std::endl;
       fundamental.convertTo(fundamental, CV_32F);
@@ -1052,7 +1057,7 @@ void MotionSegmentation::modelDiscovery(
           }
           std::vector<uchar> mask;
           cv::Mat fundamental = cv::findFundamentalMat(
-              point1, point2, CV_FM_LMEDS, 3, 0.99, mask);
+              point1, point2, cv::FM_LMEDS, 3, 0.99, mask);
           std::cout << "using " << mask.size()
                     << " points to generate motion proposal..." << std::endl;
           fundamental.convertTo(fundamental, CV_32F);

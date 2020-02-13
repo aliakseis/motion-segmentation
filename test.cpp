@@ -5,7 +5,8 @@
 // opencv
 #include <opencv2/opencv.hpp>
 //
-#include <libiomp/omp.h>
+//#include <libiomp/omp.h>
+#include <omp.h>
 // png++
 #include "MotionSegmentation.h"
 #include <Eigen/Dense>
@@ -18,14 +19,15 @@ void motionSegmentation(cv::Mat leftImage) {
 
   int width_ = leftImage.cols;
   int height_ = leftImage.rows;
-  float u[width_][height_], v[width_][height_];
-  // float u[height_][width_], v[height_][width_];
+  //float u[width_][height_], v[width_][height_];
+  std::vector<float> u(width_ * height_), v(width_ * height_);
+
   uFile.open("u_epic_sintel.txt", std::ios::in);
   vFile.open("v_epic_sintel.txt", std::ios::in);
   for (int y = 0; y < height_; ++y) {
     for (int x = 0; x < width_; ++x) {
-      uFile >> u[x][y];
-      vFile >> v[x][y];
+      uFile >> u[x + y * width_];
+      vFile >> v[x + y * width_];
     }
   }
   uFile.close();
@@ -40,10 +42,10 @@ void motionSegmentation(cv::Mat leftImage) {
   match.setOnes();
   for (int y = 0; y < height_; ++y) {
     for (int x = 0; x < width_; ++x) {
-      if (std::isnan(u[x][y]) || std::isnan(v[x][y])) {
+      if (std::isnan(u[x + y * width_]) || std::isnan(v[x + y * width_])) {
         std::cout << "find a nan at (" << x << "," << y << ")" << std::endl;
-        std::cout << u[x][y] << std::endl;
-        std::cout << v[x][y] << std::endl;
+        std::cout << u[x + y * width_] << std::endl;
+        std::cout << v[x + y * width_] << std::endl;
         cv::waitKey(0);
       }
       base(x + y * width_, 0) = static_cast<float>(x); //按行排成两列(x,y)
@@ -51,9 +53,9 @@ void motionSegmentation(cv::Mat leftImage) {
       base(x + y * width_, 2) = 1.0;
 
       match(x + y * width_, 0) =
-          base(x + y * width_, 0) + static_cast<float>(u[x][y]);
+          base(x + y * width_, 0) + static_cast<float>(u[x + y * width_]);
       match(x + y * width_, 1) =
-          base(x + y * width_, 1) + static_cast<float>(v[x][y]);
+          base(x + y * width_, 1) + static_cast<float>(v[x + y * width_]);
       // 4位有效数字
       match(x + y * width_, 0) =
           floor(match(x + y * width_, 0) * 10000.000f + 0.5) / 10000.000f;
@@ -70,10 +72,10 @@ void motionSegmentation(cv::Mat leftImage) {
 }
 
 int main(int argc, char *argv[]) {
-  std::cout << "今晚要上演的是：一幕光荣的救赎..." << std::endl;
+  std::cout << "Tonight is going to be: a glorious redemption..." << std::endl;
   // usage: ./test frame_0020.png
   std::string leftImageFilename = argv[1];
-  cv::Mat leftImage = cv::imread(leftImageFilename, CV_LOAD_IMAGE_GRAYSCALE);
+  cv::Mat leftImage = cv::imread(leftImageFilename, cv::IMREAD_GRAYSCALE);
   // for (int i = 0; i < 100; i++) {
   //   std::cout << (i + 1) % 5 << std::endl;
   // }
